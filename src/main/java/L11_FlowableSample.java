@@ -28,7 +28,7 @@ public class L11_FlowableSample {
             emitter.onComplete();
         }, BackpressureStrategy.BUFFER);
 
-        flowable.observeOn(Schedulers.computation())
+        flowable.observeOn(Schedulers.computation())  // 소비하는 측의 처리를 개별 스레드로 실행
                 .subscribe(new Subscriber<String>() {
 
                     private Subscription subscription;
