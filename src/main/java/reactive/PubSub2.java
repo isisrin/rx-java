@@ -26,13 +26,13 @@ public class PubSub2 {
         reducePublisher.subscribe(LogSubscriber());
     }
 
-    private static Publisher<String> reducePub(Publisher<Integer> publisher, String init, BiFunction<String, Integer, String> integerBiFunction) {
+    private static <T, R> Publisher<String> reducePub(Publisher<T> publisher, R init, BiFunction<R, T, R> integerBiFunction) {
         return subscriber ->
-            publisher.subscribe(new DelegateSub<Integer, String>(subscriber) {
-                String result = init;
+            publisher.subscribe(new DelegateSub<T, R>((Subscriber<? super R>) subscriber) {
+                R result = init;
 
                 @Override
-                public void onNext(Integer integer) {
+                public void onNext(T integer) {
                     result = integerBiFunction.apply(result, integer);
                 }
 
