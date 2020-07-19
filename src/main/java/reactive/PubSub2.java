@@ -18,39 +18,61 @@ import java.util.stream.Stream;
 public class PubSub2 {
     public static void main(String[] args) {
         Publisher<Integer> publisher = IteratorPublisher(Stream.iterate(1, a -> a+1).limit(10).collect(Collectors.toList()));
-        Publisher<Integer> mapPublisher = mapPublisher(publisher, s -> s * 10);
+        Publisher<String> mapPublisher = mapPublisher(publisher, s -> "[" + s + "]");
+//        Publisher<Integer> mapPublisher = mapPublisher(publisher, s -> s * 10);
+//        Publisher<Integer> sumPublisher = sumPub(publisher);
+//        Publisher<Integer> sumPublisher = reducePub(publisher, 0, (a,b) -> a+b);
         mapPublisher.subscribe(LogSubscriber());
     }
 
-    private static Publisher<Integer> mapPublisher(Publisher<Integer> publisher, Function<Integer, Integer> integerIntegerFunction) {
-        return subscriber -> publisher.subscribe(new Subscriber<Integer>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                System.out.println("맵 퍼블리셔는 온서브를 호출했읍니당!!");
-                subscriber.onSubscribe(subscription);
-            }
+/*    private static Publisher<Integer> reducePub(Publisher<Integer> publisher, int init, BiFunction<Integer, Integer, Integer> integerBiFunction) {
+        return subscriber ->
+            publisher.subscribe(new DelegateSub(subscriber) {
+                int result = init;
+
+                @Override
+                public void onNext(Integer integer) {
+                    result = integerBiFunction.apply(result, integer);
+                }
+
+                @Override
+                public void onComplete() {
+                    subscriber.onNext(result);
+                    subscriber.onComplete();
+                }
+            });
+    }*/
+
+/*    private static Publisher<Integer> sumPub(Publisher<Integer> publisher) {
+        return subscriber -> publisher.subscribe(new DelegateSub(subscriber) {
+            int sum = 0;
 
             @Override
             public void onNext(Integer integer) {
-                subscriber.onNext(integerIntegerFunction.apply(integer));
+                sum += integer;
             }
 
-            @Override
-            public void onError(Throwable throwable) {
-                subscriber.onError(throwable);
-            }
-
+            // 마무리 하기전에 sum을 보내고, 다 끝났음을 알려도 됩니당
             @Override
             public void onComplete() {
-                System.out.println("맵 퍼블리셔는 끝나쏘요!");
+                subscriber.onNext(sum);
                 subscriber.onComplete();
             }
         });
+    }*/
 
+    // T type이 들어오면 R타입을 리턴하도록..
+    private static <T, R> Publisher<R> mapPublisher(Publisher<T> publisher, Function<T, R> integerFunction) {
+        return subscriber -> publisher.subscribe(new DelegateSub<T, R>(subscriber) {
+            @Override
+            public void onNext(T integer) {
+                subscriber.onNext(integerFunction.apply(integer));
+            }
+        });
     }
 
-    private static Subscriber<Integer> LogSubscriber() {
-        return new Subscriber<Integer>() {
+    private static <T> Subscriber<T> LogSubscriber() {
+        return new Subscriber<T>() {
             @Override
             public void onSubscribe(Subscription subscription) {
                 System.out.println("로그 섭스애오!! ");
@@ -58,7 +80,7 @@ public class PubSub2 {
             }
 
             @Override
-            public void onNext(Integer integer) {
+            public void onNext(T integer) {
                 System.out.println("로그 넥스트애오!! " + integer);
             }
 
