@@ -22,13 +22,14 @@ public class PubSub2 {
         Publisher<String> mapPublisher = mapPublisher(publisher, s -> "[" + s + "]");
 //        Publisher<Integer> mapPublisher = mapPublisher(publisher, s -> s * 10);
 //        Publisher<Integer> sumPublisher = sumPub(publisher);
-        Publisher<String> reducePublisher = reducePub(publisher, "", (a,b) -> a+ "-" +b);
+        Publisher<StringBuilder> reducePublisher = reducePub(publisher, new StringBuilder(),
+                (a,b) -> a.append(b+","));
         reducePublisher.subscribe(LogSubscriber());
     }
 
-    private static <T, R> Publisher<String> reducePub(Publisher<T> publisher, R init, BiFunction<R, T, R> integerBiFunction) {
+    private static <T, R> Publisher<R> reducePub(Publisher<T> publisher, R init, BiFunction<R, T, R> integerBiFunction) {
         return subscriber ->
-            publisher.subscribe(new DelegateSub<T, R>((Subscriber<? super R>) subscriber) {
+            publisher.subscribe(new DelegateSub<T, R>(subscriber) {
                 R result = init;
 
                 @Override
